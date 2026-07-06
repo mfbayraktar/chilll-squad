@@ -140,6 +140,8 @@ jobs:
           password: ${{ secrets.DOCKER_PAT }}
 
       - name: Build and push Docker image
+        env:
+          IMAGE_REPO: ${{ vars.DOCKER_REPOSITORY || github.repository }}
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -149,5 +151,5 @@ jobs:
             PYTHON_VERSION=${{ env.PYTHON_VERSION }}
             UV_VERSION=${{ inputs.uv_version }}
           tags: |
-            ${{ vars.DOCKER_REPOSITORY }}:latest
-            ${{ vars.DOCKER_REPOSITORY }}:${{ inputs.plugin_version }}
+            ${{ env.IMAGE_REPO }}:latest
+            ${{ env.IMAGE_REPO }}:${{ inputs.plugin_version }}
