@@ -6,18 +6,16 @@ from pathlib import Path
 # third-party imports
 from depsight.core.plugins.base import BasePlugin
 
-# TODO: Once you rename the class in `src/myplugin/myplugin.py` from
-#       `MyPlugin` to `NpmPlugin`, update this import to match:
-#           from myplugin.myplugin import NpmPlugin
-from myplugin.myplugin import MyPlugin
+from npm.npm import NpmPlugin
+
+FIXTURES = Path(__file__).parent / "fixtures"
 
 
 class TestCollect:
     """Verify collect() populates dependencies correctly."""
 
     def test_plugin_implements_base_plugin_contract(self):
-        # TODO: Replace `MyPlugin()` with `NpmPlugin()` after the rename.
-        plugin = MyPlugin()
+        plugin = NpmPlugin()
 
         assert isinstance(plugin, BasePlugin)
         assert isinstance(plugin.default_file, str)
@@ -26,65 +24,47 @@ class TestCollect:
         assert plugin.default_file not in {".", ".."}
         assert plugin.default_file in plugin.dependency_files
 
-        # TODO: Add assertions that pin down the new expected values once
-        #       you have updated the plugin's properties, for example:
-        #           assert plugin.name == "npm"
-        #           assert plugin.default_file == "package-lock.json"
-        #           assert "package-lock.json" in plugin.dependency_files
+        assert plugin.name == "npm"
+        assert plugin.default_file == "package-lock.json"
+        assert "package-lock.json" in plugin.dependency_files
 
     def test_collect_dependency_details(self):
-        # TODO: Replace `MyPlugin()` with `NpmPlugin()` after the rename.
-        plugin = MyPlugin()
+        plugin = NpmPlugin()
+        plugin.collect(FIXTURES, file=plugin.default_file)
 
-        # TODO: The current call points at a non-existent directory and relies
-        #       on the stub implementation returning the hard-coded "foo"/"bar"
-        #       dependencies. Once you implement real parsing of
-        #       `package-lock.json`:
-        #         1. Add a small fixture file under `tests/fixtures/` (e.g.
-        #            `tests/fixtures/package-lock.json`) with a couple of
-        #            dependencies and pinned versions you control.
-        #         2. Point `collect()` at the directory containing that
-        #            fixture, e.g.:
-        #                plugin.collect(
-        #                    Path(__file__).parent / "fixtures",
-        #                    file="package-lock.json",
-        #                )
-        plugin.collect("/nonexistent", file=plugin.default_file)
+        by_name = {dep.name: dep for dep in plugin.dependencies}
+        assert set(by_name) == {"lodash", "mocha", "ms"}
 
-        # TODO: Rename `foo` / `bar` to variable names that match the
-        #       dependencies declared in your fixture (e.g. `lodash`,
-        #       `express`) and update the expected tuples below to match
-        #       the real names, versions, and the new tool name ("npm").
-        foo, bar = plugin.dependencies
-        assert (foo.name, foo.version, foo.tool_name) == ("foo", "1.0.0", "myplugin")
-        assert (bar.name, bar.version, bar.tool_name) == ("bar", "2.0.0", "myplugin")
+        lodash = by_name["lodash"]
+        assert (lodash.version, lodash.tool_name) == ("4.17.21", "npm")
+        assert lodash.category == "prod"
+        assert lodash.is_transitive is False
+        assert lodash.registry == "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz"
+
+        mocha = by_name["mocha"]
+        assert (mocha.version, mocha.tool_name) == ("10.2.0", "npm")
+        assert mocha.category == "dev"
+        assert mocha.is_transitive is False
+
+        ms = by_name["ms"]
+        assert (ms.version, ms.tool_name) == ("2.1.3", "npm")
+        assert ms.category == "dev"
+        assert ms.is_transitive is True
 
 
 class TestExport:
     """Verify export() writes a valid CSV."""
 
     def test_export_csv(self, tmp_path: Path):
-        # TODO: Replace `MyPlugin()` with `NpmPlugin()` after the rename.
-        plugin = MyPlugin()
-
-        # TODO: Same as in `test_collect_dependency_details` — once parsing is
-        #       implemented, point `collect()` at the directory containing
-        #       your `package-lock.json` fixture instead of "/some/project".
-        plugin.collect("/some/project", file=plugin.default_file)
-        csv_path = plugin.export("/some/project", tmp_path)
+        plugin = NpmPlugin()
+        plugin.collect(FIXTURES, file=plugin.default_file)
+        csv_path = plugin.export(FIXTURES, tmp_path)
         assert csv_path.exists()
-
-        # TODO: The exported CSV filename is derived from the plugin's `name`
-        #       property. After changing the plugin name to "npm", update the
-        #       expected filename here, e.g.:
-        #           assert csv_path.name == "npm_project.csv"
-        assert csv_path.name == "myplugin_project.csv"
+        assert csv_path.name == "npm_fixtures.csv"
 
         with csv_path.open(encoding="utf-8") as fh:
             rows = list(csv.DictReader(fh))
 
-        # TODO: Update the expected row count and names so they match the
-        #       dependencies declared in your `package-lock.json` fixture.
-        assert len(rows) == 2
-        assert rows[0]["name"] == "foo"
-        assert rows[1]["name"] == "bar"
+        assert len(rows) == 3
+        assert {row["name"] for row in rows} == {"lodash", "mocha", "ms"}
+

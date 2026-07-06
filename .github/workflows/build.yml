@@ -92,10 +92,7 @@ jobs:
             echo "::endgroup::"
 
             echo "::group::Build wheel"
-            # TODO: Run 'uv --help | grep wheel' in a terminal to check which command
-            # can be used to build your wheel. Use this command without any additional
-            # flags and replace this comment block with the actual command.
- 
+            uv build --wheel
             ls -lah dist
             echo "::endgroup::"
 
@@ -116,10 +113,7 @@ jobs:
           set -euo pipefail
 
           echo "::group::Upload wheel to GitHub Release"
-          # TODO: Upload the built wheel using 'gh release upload' with the following arguments:
-          #   - The dedicated release tag: $RELEASE_TAG
-          #   - The file glob pointing to the built wheel: dist/*.whl
-          #   - The '--clobber' flag so re-runs overwrite an existing asset
+          gh release upload "$RELEASE_TAG" dist/*.whl --clobber
           echo "::endgroup::"
 
   build_container:
@@ -145,15 +139,15 @@ jobs:
           username: ${{ vars.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PAT }}
 
-      # TODO: Build (and push) the Docker image
-      # Use the 'docker/build-push-action@v6' action.
-      # Configure it with:
-      #   context:    '.'           (the repo root as Docker build context)
-      #   file:       'Dockerfile'  (the top-level Dockerfile)
-      #   push:       only when inputs.push_image is true
-      #   build-args:
-      #      PYTHON_VERSION=<PYTHON_VERSION> (use: ${{ env.PYTHON_VERSION }})
-      #      UV_VERSION=<UV_VERSION> (use: ${{ inputs.uv_version }})
-      #   tags:       two tags on the image:
-      #               1) <DOCKER_REPOSITORY>:latest (use: ${{ vars.DOCKER_REPOSITORY }})
-      #               2) <DOCKER_REPOSITORY>:<PLUGIN_VERSION> (use: ${{ vars.DOCKER_REPOSITORY }} and ${{ inputs.plugin_version }})
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: ${{ inputs.push_image }}
+          build-args: |
+            PYTHON_VERSION=${{ env.PYTHON_VERSION }}
+            UV_VERSION=${{ inputs.uv_version }}
+          tags: |
+            ${{ vars.DOCKER_REPOSITORY }}:latest
+            ${{ vars.DOCKER_REPOSITORY }}:${{ inputs.plugin_version }}
