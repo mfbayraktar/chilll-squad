@@ -1,0 +1,35 @@
+name: Manual Dispatch
+
+on:
+  workflow_dispatch:
+    inputs:
+      uv_version:
+        description: "uv version for the Docker build"
+        required: false
+        default: "0.11.1"
+        type: string
+      python_version:
+        description: "uv version for the Docker build"
+        required: false
+        default: "3.12"
+        type: string
+      push_image:
+        description: "Push the container image to Docker Hub"
+        required: false
+        default: false
+        type: boolean
+      plugin_version:
+        description: "Version to verify against pyproject.toml (e.g. 1.2.3)"
+        required: true
+        type: string
+
+jobs:
+  ci:
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      uv_version: ${{ inputs.uv_version }}
+      python_version: ${{ inputs.python_version }}
+      push_image: ${{ inputs.push_image }}
+      is_release: false
+      plugin_version: ${{ inputs.plugin_version }}

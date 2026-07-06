@@ -1,0 +1,26 @@
+# Version control
+.git/
+.gitignore
+
+# Dev container & CI config
+.devcontainer/
+.github/
+
+# Python virtual environment and caches
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+
+# Tests
+tests/
+
+# Documentation & metadata
+*.md
+images/
+
+# Build output (copied explicitly in Dockerfile)
+# dist/ and wheels/ are intentionally NOT ignored — they are needed by the build

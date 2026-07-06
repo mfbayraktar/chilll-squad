@@ -1,0 +1,36 @@
+site_name: Depsight Third-Party Plugin
+site_description: Instructions for building, packaging, and using a third-party plugin for the Depsight dependency analysis framework.
+
+theme:
+  name: material
+  palette:
+    scheme: default
+    primary: orange
+    accent: orange
+  features:
+    - navigation.sections
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+plugins:
+  - search
+  - mermaid2
+
+nav:
+  - Getting Started:
+      - Getting Started: instructions/getting-started/getting-started.md
+  - Instructions:
+      - "Task 1": instructions/tasks/task-1-write-a-npm-plugin.md
+      - "Task 2": instructions/tasks/task-2-package-and-publish-your-plugin.md
+      - "Task 3": instructions/tasks/task-3-scan-dependencies.md

@@ -1,0 +1,39 @@
+{
+    "name": "my-third-party-plugin",
+    "build": {
+        "context": "..",
+        "dockerfile": "Dockerfile",
+        "args": {
+            "PYTHON_VERSION": "${localEnv:PYTHON_VERSION:3.12}",
+            "UV_VERSION": "${localEnv:UV_VERSION:0.10.9}"
+        }
+    },
+    "containerEnv": {
+        "DEPSIGHT_ENV": "development"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-python.debugpy",
+                "charliermarsh.ruff",
+                "ms-azuretools.vscode-containers",
+                "tamasfe.even-better-toml",
+                "eamodio.gitlens",
+                "GitHub.copilot",
+                "github.vscode-github-actions",
+                "redhat.vscode-yaml",
+                "mechatroner.rainbow-csv",
+                "Gruntfuggly.todo-tree"
+            ]
+        }
+    },
+    "postCreateCommand": "bash .devcontainer/postCreateCommand.sh",
+    "features": {
+        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+            "moby": false
+        }
+    },
+    "remoteUser": "vscode"
+}

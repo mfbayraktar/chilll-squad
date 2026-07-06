@@ -1,0 +1,159 @@
+name: CI (DevContainer Build & Test)
+
+on:
+  workflow_call:
+    inputs:
+      plugin_version:
+        description: "Plugin version to verify against pyproject.toml (e.g. 1.2.3)."
+        required: false
+        type: string
+      is_release:
+        description: "Whether this is a release build (uploads wheel to GH Release)."
+        required: true
+        type: boolean
+      uv_version:
+        description: "uv version for the Docker build"
+        required: true
+        type: string
+      python_version:
+        description: "Python version for the Docker build"
+        required: true
+        type: string
+      push_image:
+        description: "Push the container image to Docker Hub"
+        required: true
+        type: boolean
+
+
+env:
+  PYTHON_VERSION: ${{ inputs.python_version }}
+  UV_VERSION: ${{ inputs.uv_version }}
+
+jobs:
+  build_wheel:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify plugin version matches pyproject.toml
+        if: ${{ inputs.plugin_version != '' }}
+        env:
+          VERSION: ${{ inputs.plugin_version }}
+        run: |
+          set -euo pipefail
+
+          echo "::group::Version check"
+
+          toml_version=$(grep '^version' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "Parsed '$VERSION' as plugin version"
+          echo "Parsed '$toml_version' from pyproject.toml"
+
+          if [[ "$VERSION" != "$toml_version" ]]; then
+            echo "::error::Plugin version '$VERSION' does not match pyproject.toml version '$toml_version'"
+            exit 1
+          fi
+
+          echo "Plugin version and pyproject.toml version match ('$VERSION')"
+
+          echo "::endgroup::"
+
+      - name: Lint, test & build wheel
+        uses: devcontainers/ci@v0.3
+        with:
+          configFile: .devcontainer/devcontainer.json
+          runCmd: |
+
+            set -e
+
+            echo "::group::Environment Hel"
+            python --version
+            pip --version
+            which python
+            echo "::endgroup::"
+
+            source .venv/bin/activate
+
+            echo "::group::CLI health check"
+            depsight --help
+            echo "::endgroup::"
+
+            echo "::group::Ruff linting"
+            ruff check src/ tests/
+            echo "::endgroup::"
+
+            echo "::group::Type checking"
+            mypy src/
+            echo "::endgroup::"
+
+            echo "::group::Pytest"
+            python -m pytest tests/ -v --tb=short
+            echo "::endgroup::"
+
+            echo "::group::Build wheel"
+            # TODO: Run 'uv --help | grep wheel' in a terminal to check which command
+            # can be used to build your wheel. Use this command without any additional
+            # flags and replace this comment block with the actual command.
+ 
+            ls -lah dist
+            echo "::endgroup::"
+
+      - name: Upload plugin wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-wheel
+          path: dist/*.whl
+          if-no-files-found: error
+
+      - name: Upload wheel to GitHub Release
+        if: ${{ inputs.is_release }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.plugin_version }}
+        run: |
+
+          set -euo pipefail
+
+          echo "::group::Upload wheel to GitHub Release"
+          # TODO: Upload the built wheel using 'gh release upload' with the following arguments:
+          #   - The dedicated release tag: $RELEASE_TAG
+          #   - The file glob pointing to the built wheel: dist/*.whl
+          #   - The '--clobber' flag so re-runs overwrite an existing asset
+          echo "::endgroup::"
+
+  build_container:
+    runs-on: ubuntu-latest
+    needs: build_wheel
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download plugin wheel artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: plugin-wheel
+          path: dist/
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: ${{ inputs.push_image }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PAT }}
+
+      # TODO: Build (and push) the Docker image
+      # Use the 'docker/build-push-action@v6' action.
+      # Configure it with:
+      #   context:    '.'           (the repo root as Docker build context)
+      #   file:       'Dockerfile'  (the top-level Dockerfile)
+      #   push:       only when inputs.push_image is true
+      #   build-args:
+      #      PYTHON_VERSION=<PYTHON_VERSION> (use: ${{ env.PYTHON_VERSION }})
+      #      UV_VERSION=<UV_VERSION> (use: ${{ inputs.uv_version }})
+      #   tags:       two tags on the image:
+      #               1) <DOCKER_REPOSITORY>:latest (use: ${{ vars.DOCKER_REPOSITORY }})
+      #               2) <DOCKER_REPOSITORY>:<PLUGIN_VERSION> (use: ${{ vars.DOCKER_REPOSITORY }} and ${{ inputs.plugin_version }})

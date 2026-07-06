@@ -1,0 +1,38 @@
+name: On Push
+
+"on":
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'LICENSE'
+      - 'README.md'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  parse-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.versions.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse version
+        id: versions
+        run: |
+          version=$(grep '^version' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  call-build:
+    needs: parse-version
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      plugin_version: ${{ needs.parse-version.outputs.version }}
+      is_release: false
+      push_image: false
+      uv_version: "0.11.1"
+      python_version: "3.12"

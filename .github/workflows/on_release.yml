@@ -1,0 +1,16 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  ci:
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      plugin_version: ${{ github.event.release.tag_name }}
+      is_release: true
+      push_image: true
+      uv_version: "0.11.1"
+      python_version: "3.12"
