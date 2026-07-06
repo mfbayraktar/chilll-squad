@@ -27,6 +27,8 @@ jobs:
   ci:
     uses: ./.github/workflows/build.yml
     secrets: inherit
+    permissions:
+      contents: write
     with:
       uv_version: ${{ inputs.uv_version }}
       python_version: ${{ inputs.python_version }}

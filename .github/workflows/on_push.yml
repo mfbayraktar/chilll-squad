@@ -30,6 +30,8 @@ jobs:
     needs: parse-version
     uses: ./.github/workflows/build.yml
     secrets: inherit
+    permissions:
+      contents: write
     with:
       plugin_version: ${{ needs.parse-version.outputs.version }}
       is_release: false
