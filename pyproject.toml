@@ -7,7 +7,7 @@ packages = ["src/npm"]
 
 [project]
 name = "depsight-npm-plugin"
-version = "1.0.0"
+version = "1.0.1"
 description = "A third-party plugin template for depsight"
 requires-python = ">=3.12"
 dependencies = [
